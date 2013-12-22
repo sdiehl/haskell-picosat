@@ -32,6 +32,7 @@ Then the clause can be written as sequences of positive integers
 ```text
 (A v ¬B v C)
 1 -2 3 0
+```
 
 ```text
 (B v D v E)
