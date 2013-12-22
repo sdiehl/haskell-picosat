@@ -46,7 +46,7 @@ Then the clause can be written as sequences of positive integers
 Solutions to a statement of the form:
 
 ```text
-(A v ¬B v C) ^ (B v D v E) ^ (D v F)
+(A v ¬B v C) ∧ (B v D v E) ∧ (D v F)
 ```
 
 Can be written as lists of zero-terminated integers:
@@ -57,13 +57,20 @@ Can be written as lists of zero-terminated integers:
 4 6 0
 ```
 
+To use the Haskell bindings simply pass a list of clauses to
+the ``solve`` function, this will return either the solution or
+``Unsatisfiable`` or ``Unknown``.
+
 ```haskell
-λ: import Picosat
-λ: solve [[1, -2, 3], [2,4,5], [4,6]]
-Solution [1,-2,3,4,5,6]
+import Picosat
+
+main :: IO [Int]
+main = do
+  solve [[1, -2, 3], [2,4,5], [4,6]]
+-- Solution [1,-2,3,4,5,6]
 ```
 
-Which we can interpret as the solution:
+The solution given we can interpret as:
 
 ```text
 1   A 
