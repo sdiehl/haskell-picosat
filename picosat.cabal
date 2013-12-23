@@ -22,6 +22,8 @@ Source-Repository head
 
 library
   exposed-modules:     Picosat
+  other-extensions:
+    ForeignFunctionInterface
 
   Cc-options:          
   Ghc-options:        -Wall
