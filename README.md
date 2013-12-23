@@ -1,12 +1,15 @@
 Haskell PicoSAT
 ---------------
 
+haskell-picosat are Haskell bindings to the PicoSAT solver, written in C. It reads in clauses in CNF (
+Conjunctive-Normal Form ) and returns a solution which satisfies the clauses.
+
+The most notable distinction of this binding is that the SAT solver library is included with the cabal package
+so you shouldn't need to install anything but this package to get going. It's also notably faster than a pure
+Haskell solution at solving very large constraint problems.
+
 Installing
 ----------
-
-The most notable feature of this binding is that the SAT solver is included with the cabal package so you
-shouldn't need to install anything but this package to get going. It's also notably faster than a pure Haskell
-solution at solving very large constraint problems.
 
 ```bash
 $ cabal install picosat
@@ -14,10 +17,6 @@ $ cabal install picosat
 
 Usage
 -----
-
-haskell-picosat are Haskell bindings to the Picosat solver written
-in C. It reads in clauses written in CNF and returns a solution if
-satisfiable.
 
 If we have a table of variables representing logical statements we can enumerate them with integers.
 
