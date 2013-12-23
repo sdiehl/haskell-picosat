@@ -4,6 +4,10 @@ Haskell PicoSAT
 Installing
 ----------
 
+The most notable feature of this binding is that the SAT solver is included with the cabal package so you
+shouldn't need to install anything but this package to get going. It's also notably faster than a pure Haskell
+solution at solving very large constraint problems.
+
 ```bash
 $ cabal install picosat
 ```
@@ -68,7 +72,7 @@ import Picosat
 main :: IO [Int]
 main = do
   solve [[1, -2, 3], [2,4,5], [4,6]]
--- Solution [1,-2,3,4,5,6]
+  -- Solution [1,-2,3,4,5,6]
 ```
 
 The solution given we can interpret as:
