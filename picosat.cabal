@@ -1,7 +1,7 @@
 name:                picosat
 version:             0.1.0.0
 synopsis:            Bindings to the PicoSAT solver
-homepage:            http://www.stephendiehl.com
+homepage:            https://github.com/sdiehl/haskell-picosat
 license:             MIT
 license-file:        LICENSE
 author:              Stephen Diehl
@@ -18,7 +18,7 @@ Description:
   `picosat` provides bindings for the fast PicoSAT solver library.
 Source-Repository head
     Type: git
-    Location: https://github.com/sdiehl/haskell-picosat
+    Location: git@github.com:sdiehl/haskell-picosat.git
 
 library
   exposed-modules:     Picosat
