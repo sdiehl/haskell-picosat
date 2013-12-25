@@ -1,6 +1,6 @@
 module Sudoku where
 
-import Picosat
+import Picosat ( solve, Solution(..) )
 
 cross :: [a] -> [(a, a)]
 cross list = [(x,y) | x <- list, y <- list]
@@ -76,4 +76,4 @@ main = do
   sol <- solve cnf
   case sol of
     Solution s -> mapM_ print $ toSudoku s
-    _          -> putStrLn "Puzzle not solvable"
+    _          -> putStrLn "Puzzle not solvable."
