@@ -1,5 +1,19 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 
+{- | The solve function takes a nested list of integers representing variables in clauses and returns the
+   solution. Usage:
+
+@
+import Picosat
+
+main :: IO [Int]
+main = do
+  solve [[1, -2, 3], [2,4,5], [4,6]]
+  -- Solution [1,-2,3,4,5,6]
+@
+
+-}
+
 module Picosat (
   solve,
   solveST,
