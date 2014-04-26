@@ -1,7 +1,25 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE UnicodeSyntax #-}
 
-{- | The solve function takes a nested list of integers representing variables in clauses and returns the
-   solution. Usage:
+
+{- |
+
+We wish to find a solution that satisifes the following logical condition.
+
+@
+(A v ¬B v C) ∧ (B v D v E) ∧ (D v F)
+@
+
+We can specify this as a zero-terminated lists of integers, with integers mapping onto the variable as ordered
+in the condition and with integer negation corresponding to logical negation of the specific clause.
+
+@
+1 -2 3 0
+2 4 5 0
+4 6 0
+@
+
+We feed this list to the SAT solver using the 'solve' function either in IO or ST monad.
 
 @
 import Picosat
@@ -12,12 +30,36 @@ main = do
   -- Solution [1,-2,3,4,5,6]
 @
 
+The solution given we can interpret as:
+
+>  1  A
+> -2 ~B
+>  3  C
+>  4  D
+>  5  E
+>  6  F
+
+To generate all satisfiable solutions, use 'solveAll' function.:
+
+@
+import Picosat
+import Control.Monad.ST
+
+main :: [Int]
+main = runST $ do
+  solveAllST [[1,2]]
+  -- [Solution [1,2],Solution [-1,2],Solution [1,-2]]
+@
+
 -}
 
 module Picosat (
   solve,
   solveST,
+  solveAll,
+  solveAllST,
   unsafeSolve,
+  unsafeSolveAll,
   Solution(..)
 ) where
 
@@ -93,10 +135,26 @@ solve cls = do
   picosat_reset pico
   return sol
 
+solveAll :: Integral a => [[a]] -> IO [Solution]
+solveAll e = do
+  let e' = map (map fromIntegral) e
+  s <- solve e'
+  case s of
+      Solution x -> (Solution x :) `fmap` solveAll (map negate x : e')
+      _          -> return []
+
 {-# NOINLINE solveST #-}
 solveST :: Integral a => [[a]] -> ST t Solution
 solveST = unsafeIOToST . solve
 
+{-# NOINLINE solveAllST #-}
+solveAllST :: [[Int]] -> ST t [Solution]
+solveAllST = unsafeIOToST . solveAll
+
 {-# NOINLINE unsafeSolve #-}
 unsafeSolve :: Integral a => [[a]] -> Solution
 unsafeSolve = unsafePerformIO . solve
+
+{-# NOINLINE unsafeSolveAll #-}
+unsafeSolveAll :: Integral a => [[a]] -> [Solution]
+unsafeSolveAll = unsafePerformIO . solveAll
