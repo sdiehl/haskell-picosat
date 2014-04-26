@@ -92,4 +92,4 @@ PicoSAT itself is included and is also licensed the MIT license.
 Copyright (c) 2006 - 2012, Armin Biere, Johannes Kepler University.
 
 Released under the MIT License.
-Copyright (c) 2013, Stephen Diehl
+Copyright (c) 2013-2014, Stephen Diehl
