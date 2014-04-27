@@ -53,7 +53,7 @@ Solutions to a statement of the form:
 (A v ¬B v C) ∧ (B v D v E) ∧ (D v F)
 ```
 
-Can be written as lists of zero-terminated integers:
+Can be written as zero-terminated lists of integers:
 
 ```text
 1 -2 3 0
