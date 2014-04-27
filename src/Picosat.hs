@@ -1,6 +1,4 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
-{-# LANGUAGE UnicodeSyntax #-}
-
 
 {- |
 
