@@ -49,6 +49,8 @@ main = runST $ do
   -- [Solution [1,2],Solution [-1,2],Solution [1,-2]]
 @
 
+For a higher level interface see: <http://hackage.haskell.org/package/picologic>
+
 -}
 
 module Picosat (
@@ -121,10 +123,11 @@ solution pico = do
       | a == satisfiable   -> getSolution pico
       | otherwise          -> error "Picosat error."
 
-toCInts :: Integral a => [[a]] -> [[CInt]]
+toCInts :: [[Int]] -> [[CInt]]
 toCInts = map $ map fromIntegral
 
-solve :: Integral a => [[a]] -> IO Solution
+-- | Solve a list of CNF constraints yielding the first solution.
+solve :: [[Int]] -> IO Solution
 solve cls = do
   let ccls = toCInts cls
   pico <- picosat_init
@@ -133,7 +136,8 @@ solve cls = do
   picosat_reset pico
   return sol
 
-solveAll :: Integral a => [[a]] -> IO [Solution]
+-- | Solve a list of CNF constraints yielding all possible solutions.
+solveAll :: [[Int]] -> IO [Solution]
 solveAll e = do
   let e' = map (map fromIntegral) e
   s <- solve e'
@@ -142,7 +146,7 @@ solveAll e = do
       _          -> return []
 
 {-# NOINLINE solveST #-}
-solveST :: Integral a => [[a]] -> ST t Solution
+solveST :: [[Int]] -> ST t Solution
 solveST = unsafeIOToST . solve
 
 {-# NOINLINE solveAllST #-}
@@ -150,9 +154,9 @@ solveAllST :: [[Int]] -> ST t [Solution]
 solveAllST = unsafeIOToST . solveAll
 
 {-# NOINLINE unsafeSolve #-}
-unsafeSolve :: Integral a => [[a]] -> Solution
+unsafeSolve :: [[Int]] -> Solution
 unsafeSolve = unsafePerformIO . solve
 
 {-# NOINLINE unsafeSolveAll #-}
-unsafeSolveAll :: Integral a => [[a]] -> [Solution]
+unsafeSolveAll :: [[Int]] -> [Solution]
 unsafeSolveAll = unsafePerformIO . solveAll
