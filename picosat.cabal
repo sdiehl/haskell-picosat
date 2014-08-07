@@ -1,5 +1,5 @@
 name:                picosat
-version:             0.1.0.2
+version:             0.1.1
 synopsis:            Bindings to the PicoSAT solver
 homepage:            https://github.com/sdiehl/haskell-picosat
 license:             MIT
@@ -9,8 +9,8 @@ maintainer:          stephen.m.diehl@gmail.com
 copyright:           2014 Stephen Diehl
 Category:            Logic
 build-type:          Simple
-cabal-version:       >=1.10
-tested-with:         GHC == 7.6.1
+cabal-version:       >=1.20
+tested-with:         GHC == 7.6.1, GHC == 7.6.3, GHC == 7.8.3
 extra-source-files:  
   cbits/picosat.h
 Bug-Reports:         https://github.com/sdiehl/haskell-picosat/issues
@@ -26,7 +26,7 @@ library
   other-extensions:
     ForeignFunctionInterface
 
-  ghc-options:        -Wall -fwarn-tabs
+  ghc-options:        -Wall -O2 -fwarn-tabs
   cc-options:         -funroll-loops
   build-depends:      base >=4.6 && <4.7
   default-language:   Haskell2010
