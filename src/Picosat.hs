@@ -13,7 +13,7 @@ in the condition and with integer negation corresponding to logical negation of 
 > 2 4 5 0
 > 4 6 0
 
-We feed this list to the SAT solver using the 'solve' function either in IO or ST monad.
+We feed this list of clauses to the SAT solver using the 'solve' function.
 
 @
 import Picosat
@@ -37,11 +37,9 @@ To generate all satisfiable solutions, use 'solveAll' function.:
 
 @
 import Picosat
-import Control.Monad.ST
 
-main :: [Int]
-main = runST $ do
-  solveAllST [[1,2]]
+main :: IO [Int]
+main = solveAll [[1,2]]
   -- [Solution [1,2],Solution [-1,2],Solution [1,-2]]
 @
 
