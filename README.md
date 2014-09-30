@@ -1,6 +1,8 @@
 Haskell PicoSAT
 ---------------
 
+[![Build Status](https://travis-ci.org/sdiehl/haskell-picosat.svg)](https://travis-ci.org/sdiehl/haskell-picosat)
+
 haskell-picosat are Haskell bindings to the PicoSAT solver, written in C. It reads in clauses in CNF (
 Conjunctive-Normal Form ) and returns a solution which satisfies the clauses.
 
