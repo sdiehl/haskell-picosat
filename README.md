@@ -2,7 +2,7 @@ Haskell PicoSAT
 ---------------
 
 [![Build Status](https://travis-ci.org/sdiehl/haskell-picosat.svg)](https://travis-ci.org/sdiehl/haskell-picosat)
-[![Hackage](https://img.shields.io/hackage/v/picosat.svg?style=flat)](https://hackage.haskell.org/package/picosat)
+[![Hackage](https://img.shields.io/hackage/v/picosat.svg)](https://hackage.haskell.org/package/picosat)
 
 haskell-picosat are Haskell bindings to the PicoSAT solver, written in C. It reads in clauses in CNF (
 Conjunctive-Normal Form ) and returns a solution which satisfies the clauses.
@@ -87,6 +87,19 @@ The solution given we can interpret as:
 5   E
 6   F
 ```
+
+To generate all possible solutions we repeatedly feed the negated solution to the solver yielding which is
+implemented with the ``solveAll`` function which yields a sequence of solutions.
+
+```haskell
+import Picosat
+
+main :: IO [Int]
+main = solveAll [[1,2]]
+  -- [Solution [1,2],Solution [-1,2],Solution [1,-2]]
+```
+
+For a more complicated example a Sudoku solver is included as an example.
 
 License
 -------
