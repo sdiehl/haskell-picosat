@@ -5,7 +5,7 @@
 cabal.mkDerivation (self: {
   pname = "picosat";
   version = "0.1.1";
-  sha256 = "dfb58b78005aa2b550e2cec4f63eace1db084ed1ffac9cfd09897a4abc4713a3";
+  sha256 = "6f67a607da3d6144d38ee6454c67beda5aaab3ec0b91b277a60edb48e1728374";
   meta = {
     homepage = "https://github.com/sdiehl/haskell-picosat";
     description = "Bindings to the PicoSAT solver";
