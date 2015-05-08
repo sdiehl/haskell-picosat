@@ -28,6 +28,8 @@ library
 
   ghc-options:        -Wall -O2 -fwarn-tabs
   cc-options:         -funroll-loops
+  if os(windows)
+    cc-options:         -DNGETRUSAGE
   build-depends:      base >=4.6 && <4.8
   default-language:   Haskell2010
   Hs-source-dirs:     src
