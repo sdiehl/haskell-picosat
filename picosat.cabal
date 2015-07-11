@@ -10,7 +10,7 @@ copyright:           2014 Stephen Diehl
 Category:            Logic
 build-type:          Simple
 cabal-version:       >=1.10
-tested-with:         GHC == 7.6.1, GHC == 7.6.3, GHC == 7.8.3
+tested-with:         GHC == 7.6.1, GHC == 7.6.3, GHC == 7.8.3, GHC == 7.8.4, GHC == 7.10.1
 extra-source-files:  
   cbits/picosat.h
 Bug-Reports:         https://github.com/sdiehl/haskell-picosat/issues
@@ -30,7 +30,7 @@ library
   cc-options:         -funroll-loops
   if os(windows)
     cc-options:         -DNGETRUSAGE
-  build-depends:      base >=4.6 && <4.8
+  build-depends:      base >=4.6 && <4.9
   default-language:   Haskell2010
   Hs-source-dirs:     src
   Include-dirs:       cbits
