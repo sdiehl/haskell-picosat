@@ -32,7 +32,6 @@ library
   exposed-modules:     Picosat
   other-extensions:
     ForeignFunctionInterface
-
   ghc-options:        -Wall -O2 -fwarn-tabs
   cc-options:         -funroll-loops
   if os(windows)

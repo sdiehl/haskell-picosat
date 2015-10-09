@@ -1,5 +1,3 @@
-module Sudoku where
-
 import Picosat ( solve, Solution(..) )
 
 cross :: [a] -> [(a, a)]

@@ -52,6 +52,7 @@ module Picosat (
   solveAll,
   unsafeSolve,
   unsafeSolveAll,
+  Picosat,
   Solution(..)
 ) where
 
@@ -62,23 +63,40 @@ import Foreign.Ptr
 import Foreign.C.Types
 
 foreign import ccall unsafe "picosat_init" picosat_init
-    :: IO (Ptr a)
+    :: IO (Picosat)
 
 foreign import ccall unsafe "picosat_reset" picosat_reset
-    :: Ptr a -> IO ()
+    :: Picosat -> IO ()
 
 foreign import ccall unsafe "picosat_add" picosat_add
-    :: Ptr a -> CInt -> IO CInt
+    :: Picosat -> CInt -> IO CInt
 
 foreign import ccall unsafe "picosat_variables" picosat_variables
-    :: Ptr a -> IO CInt
+    :: Picosat -> IO CInt
 
 foreign import ccall unsafe "picosat_sat" picosat_sat
-    :: Ptr a -> CInt -> IO CInt
+    :: Picosat -> CInt -> IO CInt
 
 foreign import ccall unsafe "picosat_deref" picosat_deref
-    :: Ptr a -> CInt -> IO CInt
+    :: Picosat -> CInt -> IO CInt
 
+foreign import ccall unsafe "picosat_push" picosat_push
+    :: Picosat -> IO CInt
+
+foreign import ccall unsafe "picosat_pop" picosat_pop
+    :: Picosat -> IO CInt
+
+type Picosat = Ptr ()
+
+-- | Call a monadic action with a freshly created Picosat that
+-- is destroyed afterwards.
+withPicosat :: (Picosat -> IO a) -> IO a
+withPicosat f = do
+  pico <- picosat_init
+  res <- f pico
+  picosat_reset pico
+  return res
+  
 unknown, satisfiable, unsatisfiable :: CInt
 unknown       = 0
 satisfiable   = 10
@@ -88,13 +106,13 @@ data Solution = Solution [Int]
               | Unsatisfiable
               | Unknown deriving (Show, Eq)
 
-addClause :: Ptr a -> [CInt] -> IO ()
+addClause :: Picosat -> [CInt] -> IO ()
 addClause pico cl = mapM_ (picosat_add pico) (cl ++ [0])
 
-addClauses :: Ptr a -> [[CInt]] -> IO ()
+addClauses :: Picosat -> [[CInt]] -> IO ()
 addClauses pico = mapM_ (addClause pico)
 
-getSolution :: Ptr a -> IO Solution
+getSolution :: Picosat -> IO Solution
 getSolution pico = do
   vars <- picosat_variables pico
   sol <- forM [1..vars] $ \i -> do
@@ -102,7 +120,7 @@ getSolution pico = do
     return $ i * s
   return $ Solution $ map fromIntegral sol
 
-solution :: Ptr a -> IO Solution
+solution :: Picosat -> IO Solution
 solution pico = do
   res <- picosat_sat pico (-1)
   case res of
@@ -111,27 +129,37 @@ solution pico = do
       | a == satisfiable   -> getSolution pico
       | otherwise          -> error "Picosat error."
 
-toCInts :: [[Int]] -> [[CInt]]
-toCInts = map $ map fromIntegral
+clauseToCInts :: [Int] -> [CInt]
+clauseToCInts = map fromIntegral
+
+cnfToCInts :: [[Int]] -> [[CInt]]
+cnfToCInts = map clauseToCInts
 
 -- | Solve a list of CNF constraints yielding the first solution.
 solve :: [[Int]] -> IO Solution
 solve cls = do
-  let ccls = toCInts cls
-  pico <- picosat_init
-  _ <- addClauses pico ccls
-  sol <- solution pico
-  picosat_reset pico
-  return sol
+  let ccls = cnfToCInts cls
+  withPicosat $ \ pico -> do
+    _ <- addClauses pico ccls
+    sol <- solution pico
+    return sol
 
 -- | Solve a list of CNF constraints yielding all possible solutions.
 solveAll :: [[Int]] -> IO [Solution]
-solveAll e = do
-  let e' = map (map fromIntegral) e
-  s <- solve e'
-  case s of
-      Solution x -> (Solution x :) `fmap` solveAll (map negate x : e')
-      _          -> return []
+solveAll cls = do
+  withPicosat $ \pico -> do
+    let ccls = cnfToCInts cls
+    let allSolutions solutions = do
+          sol <- solution pico
+          case sol of
+            Solution ys -> do
+              addClause pico $ clauseToCInts $ map negate ys
+              allSolutions (sol : solutions)
+            _ ->
+              return $ reverse solutions
+    _ <- addClauses pico ccls
+    solutions <- allSolutions []
+    return solutions
 
 -- Unsafe solver functions are not guaranteed to be memory safe if the solver fails internally.
 
