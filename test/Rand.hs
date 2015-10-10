@@ -1,22 +1,8 @@
 import Picosat
-import System.Random
-
-randomLiteral :: Int -> Double -> IO Int
-randomLiteral num_vars negp =
-  do s <- randomRIO(0.0, 1.0)
-     let sign = if s < negp then -1 else 1
-     n <- randomRIO(1, num_vars)
-     return $ sign * n
-
-randomClause :: Int -> Double -> Int -> IO [Int]
-randomClause num_vars negp clause_size =
-  mapM (\_ -> randomLiteral num_vars negp) [0..clause_size]
-
-randCNF num_vars negp clause_size num_clauses =
-  mapM (\_ -> randomClause num_vars negp clause_size) [0..num_clauses]
+import RandomCNF (randomLiteral, randomCNF)
 
 testNumSolutions num_vars negp clause_size num_clauses =
-  do cnf <- randCNF num_vars negp clause_size num_clauses
+  do cnf <- randomCNF num_vars negp clause_size num_clauses
      xs <- solveAll cnf
      let nrandlit = do
            rlit <- randomLiteral num_vars negp
