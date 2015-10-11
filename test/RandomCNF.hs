@@ -14,10 +14,10 @@ randomLiteral num_vars negp =
 
 randomClause :: Int -> Double -> Int -> IO [Int]
 randomClause num_vars negp clause_size =
-  mapM (\_ -> randomLiteral num_vars negp) [0..clause_size]
+  mapM (\_ -> randomLiteral num_vars negp) [1..clause_size]
 
 
 randomCNF :: Int -> Double -> Int -> Int -> IO [[Int]]
 randomCNF num_vars negp clause_size num_clauses =
-  mapM (\_ -> randomClause num_vars negp clause_size) [0..num_clauses]
+  mapM (\_ -> randomClause num_vars negp clause_size) [1..num_clauses]
 

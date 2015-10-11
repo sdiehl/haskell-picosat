@@ -133,8 +133,8 @@ foreign import ccall unsafe "picosat_push" picosat_push
 foreign import ccall unsafe "picosat_pop" picosat_pop
     :: Picosat -> IO CInt
 
-foreign import ccall unsafe "picosat_context" picosat_context
-    :: Picosat -> IO CInt
+-- foreign import ccall unsafe "picosat_context" picosat_context
+--     :: Picosat -> IO CInt
 
 foreign import ccall unsafe "picosat_assume" picosat_assume
     :: Picosat -> CInt -> IO ()
@@ -227,12 +227,10 @@ withScopedClauses clauses action = do
 withScope :: PS a -> PS a
 withScope action = do
   pico <- gets psPicosat
-  contextVars0 <- gets psContextVars
   ctx <- liftIO $ picosat_push pico
   addContextVariable $ fromIntegral ctx
   res <- action
   _ <- liftIO $ picosat_pop pico
-  -- no -- modify $ \s -> s { psContextVars = contextVars0 }
   return res
 
 addContextVariable :: Int -> PS ()

@@ -45,3 +45,25 @@ library
 
   C-sources:
     cbits/picosat.c
+
+Test-Suite Sudoku
+  type: exitcode-stdio-1.0
+  Hs-source-dirs: test
+  main-is: Sudoku.hs
+  default-language:   Haskell2010
+  build-depends: base, picosat
+
+Test-Suite Scoped
+  type: exitcode-stdio-1.0
+  Hs-source-dirs: test
+  main-is: Scoped.hs
+  default-language:   Haskell2010
+  build-depends: base, picosat, transformers, containers
+
+Test-Suite rand-shared-improvement
+  type: exitcode-stdio-1.0
+  Hs-source-dirs: test
+  main-is: Rand.hs
+  default-language:   Haskell2010
+  build-depends: base, picosat, transformers, random, rdtsc
+
