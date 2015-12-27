@@ -45,6 +45,43 @@ main = solveAll [[1,2]]
 
 For a higher level interface see: <http://hackage.haskell.org/package/picologic>
 
+
+If you intend to solve a set of similar CNFs think about using
+Picosat's incremental interface. It allows to push and pop
+sets of clauses, as well as solving under assumptions.
+
+@
+import Picosat (evalScopedPicosat, addBaseClauses,
+                withScopedClauses, scopedAllSolutions,
+                scopedSolutionWithAssumptions)
+
+main :: IO [Int]
+main =
+  evalScopedPicosat $ do
+    addBaseClauses [[1, 2, 3]]
+    -- == [Solution [1,2,3],
+    --     Solution [1,2,-3],
+    --     Solution [1,-2,3],
+    --     Solution [1,-2,-3],
+    --     Solution [-1,-2,3],
+    --     Solution [-1,2,-3],
+    --     Solution [-1,2,3]]
+
+    withScopedClauses [[-2,-3]] $ do
+      sol <- scopedAllSolutions
+      -- ==   [Solution [-1,2,-3],
+      --       Solution [-1,-2,3],
+      --       Solution [1,-2,-3],
+      --       Solution [1,-2,3],
+      --       Solution [1,2,-3]]
+
+    addBaseClauses [[-1,-3]]
+
+    withScopedClauses [[-1,-2], [1,-3]] $ do
+      sol <- scopedSolutionWithAssumptions [1]
+@
+
+
 -}
 
 module Picosat (
@@ -52,7 +89,13 @@ module Picosat (
   solveAll,
   unsafeSolve,
   unsafeSolveAll,
-  Solution(..)
+  Picosat,
+  Solution(..),
+  evalScopedPicosat,
+  addBaseClauses,
+  withScopedClauses,
+  scopedAllSolutions,
+  scopedSolutionWithAssumptions
 ) where
 
 import Control.Monad
@@ -61,24 +104,53 @@ import System.IO.Unsafe (unsafePerformIO)
 import Foreign.Ptr
 import Foreign.C.Types
 
+import Control.Monad.Trans.State.Strict
+import Control.Monad.IO.Class
+
+import qualified Data.Set as S
+
 foreign import ccall unsafe "picosat_init" picosat_init
-    :: IO (Ptr a)
+    :: IO (Picosat)
 
 foreign import ccall unsafe "picosat_reset" picosat_reset
-    :: Ptr a -> IO ()
+    :: Picosat -> IO ()
 
 foreign import ccall unsafe "picosat_add" picosat_add
-    :: Ptr a -> CInt -> IO CInt
+    :: Picosat -> CInt -> IO CInt
 
 foreign import ccall unsafe "picosat_variables" picosat_variables
-    :: Ptr a -> IO CInt
+    :: Picosat -> IO CInt
 
 foreign import ccall unsafe "picosat_sat" picosat_sat
-    :: Ptr a -> CInt -> IO CInt
+    :: Picosat -> CInt -> IO CInt
 
 foreign import ccall unsafe "picosat_deref" picosat_deref
-    :: Ptr a -> CInt -> IO CInt
+    :: Picosat -> CInt -> IO CInt
 
+foreign import ccall unsafe "picosat_push" picosat_push
+    :: Picosat -> IO CInt
+
+foreign import ccall unsafe "picosat_pop" picosat_pop
+    :: Picosat -> IO CInt
+
+-- foreign import ccall unsafe "picosat_context" picosat_context
+--     :: Picosat -> IO CInt
+
+foreign import ccall unsafe "picosat_assume" picosat_assume
+    :: Picosat -> CInt -> IO ()
+
+
+type Picosat = Ptr ()
+
+-- | Call a monadic action with a freshly created Picosat that
+-- is destroyed afterwards.
+withPicosat :: (Picosat -> IO a) -> IO a
+withPicosat f = do
+  pico <- picosat_init
+  res <- f pico
+  picosat_reset pico
+  return res
+  
 unknown, satisfiable, unsatisfiable :: CInt
 unknown       = 0
 satisfiable   = 10
@@ -86,15 +158,18 @@ unsatisfiable = 20
 
 data Solution = Solution [Int]
               | Unsatisfiable
-              | Unknown deriving (Show, Eq)
+              | Unknown deriving (Show, Eq, Ord)
 
-addClause :: Ptr a -> [CInt] -> IO ()
-addClause pico cl = mapM_ (picosat_add pico) (cl ++ [0])
+addClause :: Picosat -> [Int] -> IO ()
+addClause pico cl = do
+  _ <- mapM_ (picosat_add pico . fromIntegral) cl
+  _ <- picosat_add pico 0
+  return ()
 
-addClauses :: Ptr a -> [[CInt]] -> IO ()
-addClauses pico = mapM_ (addClause pico)
+addClauses :: Picosat -> [[Int]] -> IO ()
+addClauses pico = mapM_ $ addClause pico
 
-getSolution :: Ptr a -> IO Solution
+getSolution :: Picosat -> IO Solution
 getSolution pico = do
   vars <- picosat_variables pico
   sol <- forM [1..vars] $ \i -> do
@@ -102,7 +177,7 @@ getSolution pico = do
     return $ i * s
   return $ Solution $ map fromIntegral sol
 
-solution :: Ptr a -> IO Solution
+solution :: Picosat -> IO Solution
 solution pico = do
   res <- picosat_sat pico (-1)
   case res of
@@ -111,27 +186,93 @@ solution pico = do
       | a == satisfiable   -> getSolution pico
       | otherwise          -> error "Picosat error."
 
-toCInts :: [[Int]] -> [[CInt]]
-toCInts = map $ map fromIntegral
-
 -- | Solve a list of CNF constraints yielding the first solution.
 solve :: [[Int]] -> IO Solution
-solve cls = do
-  let ccls = toCInts cls
-  pico <- picosat_init
-  _ <- addClauses pico ccls
-  sol <- solution pico
-  picosat_reset pico
-  return sol
+solve cnf = do
+  withPicosat $ \ pico -> do
+    _ <- addClauses pico cnf
+    sol <- solution pico
+    return sol
 
 -- | Solve a list of CNF constraints yielding all possible solutions.
 solveAll :: [[Int]] -> IO [Solution]
-solveAll e = do
-  let e' = map (map fromIntegral) e
-  s <- solve e'
-  case s of
-      Solution x -> (Solution x :) `fmap` solveAll (map negate x : e')
-      _          -> return []
+solveAll cnf = do
+  evalScopedPicosat $ do
+    addBaseClauses cnf
+    scopedAllSolutions
+
+
+data PicosatScoped = PicosatScoped { psPicosat :: Picosat,
+                                     psContextVars :: S.Set Int }
+
+type PS a = StateT PicosatScoped IO a
+
+evalScopedPicosat :: PS a -> IO a
+evalScopedPicosat action =
+  withPicosat $ \ picosat -> do
+    evalStateT action $ PicosatScoped picosat S.empty
+
+addBaseClauses :: [[Int]] -> PS ()
+addBaseClauses clauses = do
+  pico <- gets psPicosat
+  liftIO $ addClauses pico clauses
+
+withScopedClauses :: [[Int]] -> PS a -> PS a
+withScopedClauses clauses action = do
+  pico <- gets psPicosat
+  withScope $ do
+    liftIO $ addClauses pico clauses
+    action
+
+withScope :: PS a -> PS a
+withScope action = do
+  pico <- gets psPicosat
+  ctx <- liftIO $ picosat_push pico
+  addContextVariable $ fromIntegral ctx
+  res <- action
+  _ <- liftIO $ picosat_pop pico
+  return res
+
+addContextVariable :: Int -> PS ()
+addContextVariable var = modify add
+  where add s = s { psContextVars = S.insert var $ psContextVars s}
+
+-- | Get one solution in scoped context. Pay attention to not
+-- return any "context variable" which are Picosat internals.
+scopedSolution :: PS Solution
+scopedSolution = do
+  pico <- gets psPicosat
+  sol <- liftIO $ solution pico
+  case sol of
+    Solution ys -> do
+      ctxvars <- gets psContextVars
+      return $ Solution $
+        filter (\l -> S.notMember (abs l) ctxvars) $ ys
+    x ->
+      return x
+
+
+scopedAllSolutions :: PS [Solution]
+scopedAllSolutions = do
+  let recur solutions = do
+        pico <- gets psPicosat
+        sol <- scopedSolution
+        case sol of
+          Solution ys -> do
+            let negsol = map negate ys
+            liftIO $ addClause pico negsol
+            recur (sol : solutions)
+          _ ->
+            return $ reverse solutions
+  withScope $ recur []
+  
+
+scopedSolutionWithAssumptions :: [Int] -> PS Solution
+scopedSolutionWithAssumptions assumptions = do
+  pico <- gets psPicosat
+  liftIO $ mapM_ (picosat_assume pico . fromIntegral) assumptions
+  scopedSolution
+
 
 -- Unsafe solver functions are not guaranteed to be memory safe if the solver fails internally.
 
