@@ -38,7 +38,7 @@ library
   cc-options:         -funroll-loops
   if os(windows)
     cc-options:         -DNGETRUSAGE
-  build-depends:      base >=4.6 && <4.9,
+  build-depends:      base >=4.6 && <4.10,
                       transformers,
                       containers
   default-language:   Haskell2010
