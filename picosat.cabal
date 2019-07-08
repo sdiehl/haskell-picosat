@@ -1,5 +1,5 @@
 name:                picosat
-version:             0.1.5
+version:             0.1.6
 synopsis:            Bindings to the PicoSAT solver
 homepage:            https://github.com/sdiehl/haskell-picosat
 license:             MIT
