@@ -1,8 +1,8 @@
-import Picosat
-import RandomCNF (randomLiteral, randomCNF)
-import System.CPUTime.Rdtsc
+import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Word (Word64)
-import Control.Monad.IO.Class (liftIO, MonadIO)
+import Picosat
+import RandomCNF (randomCNF, randomLiteral)
+import System.CPUTime.Rdtsc
 
 -- | Wrap any 'IO' computation so that it returns execution
 -- time in CPU cycles as well as the real value.
@@ -12,14 +12,13 @@ measureCycles ioa = do
   a <- ioa
   a `seq` return ()
   end <- liftIO $ rdtsc
-  return (end-start, a)
-
+  return (end - start, a)
 
 -- | Test program demonstrating effectiveness of using Picosat's
 -- solve-with-assumptions interface. One Picosat instance is kept
 -- across many calls. It is able to use the kept state for good
 -- improvements in run time.
--- 
+--
 -- Random CNF's are generated and then solved multiple times,
 -- each time assuming another additional random literal.
 -- On my computer the resulting times look like this:
@@ -41,34 +40,35 @@ measureCycles ioa = do
 -- time the same CNF plus an additional literal is solved again and
 -- again from cold.  The shared times show how good Picosat runtimes
 -- benefit from keeping one Picosat instance in memory.
-
 testNumSolutions num_vars negp clause_size num_rands num_clauses =
-  do cnf <- randomCNF num_vars negp clause_size num_clauses
-     someLiterals <-
-       mapM (\_->randomLiteral num_vars negp) [0..num_rands]
-     print ("num clauses", num_clauses)
-     let solveUnsharedWith r = do
-           solution <- solve $ cnf ++ [[r]]
-           case solution of
-             Unsatisfiable -> return 0
-             Solution _ -> return 1
-     re <- mapM (\r-> do
-                    (c, _) <- measureCycles (solveUnsharedWith r)
-                    return $ c `div` 3000)
-           someLiterals
-     print ("unshared times:", re)
+  do
+    cnf <- randomCNF num_vars negp clause_size num_clauses
+    someLiterals <-
+      mapM (\_ -> randomLiteral num_vars negp) [0 .. num_rands]
+    print ("num clauses", num_clauses)
+    let solveUnsharedWith r = do
+          solution <- solve $ cnf ++ [[r]]
+          case solution of
+            Unsatisfiable -> return 0
+            Solution _ -> return 1
+    re <-
+      mapM
+        ( \r -> do
+            (c, _) <- measureCycles (solveUnsharedWith r)
+            return $ c `div` 3000
+        )
+        someLiterals
+    print ("unshared times:", re)
 
-     let solveSharedWith lit = do
-           (cyc, _) <- measureCycles $
-                       scopedSolutionWithAssumptions [lit]
-           return $ cyc `div` 3000
-     ts <- evalScopedPicosat $ do
-       addBaseClauses cnf
-       mapM solveSharedWith someLiterals
-     print ("shared times:", ts)
-
+    let solveSharedWith lit = do
+          (cyc, _) <-
+            measureCycles $
+              scopedSolutionWithAssumptions [lit]
+          return $ cyc `div` 3000
+    ts <- evalScopedPicosat $ do
+      addBaseClauses cnf
+      mapM solveSharedWith someLiterals
+    print ("shared times:", ts)
 
 main = do
-  mapM_ (testNumSolutions 100 0.5 3 20) [300,302..500]
-
-
+  mapM_ (testNumSolutions 100 0.5 3 20) [300, 302 .. 500]

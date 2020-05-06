@@ -5,3 +5,5 @@ cabal.sandbox.config
 .cabal-sandbox
 dist/
 .stack-work
+dist-newstyle
+stack.yaml.lock
